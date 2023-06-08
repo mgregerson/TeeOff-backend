@@ -1,0 +1,52 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "http://example.com/example.json",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 50
+    },
+    "location": {
+      "type": "string"
+    },
+    "distance": {
+      "type": "integer"
+    },
+    "par": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 7
+    },
+    "priceInDollars": {
+      "type": "integer"
+    },
+    "numOfHoles": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "phoneNumber": {
+      "type": "string"
+    },
+    "owner": {
+      "type": "string",
+      "minLength": 6,
+      "maxLength": 60
+    },
+    "image": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "name",
+    "location",
+    "distance",
+    "par",
+    "priceInDollars",
+    "numOfHoles",
+    "phoneNumber",
+    "owner"
+  ]
+}
