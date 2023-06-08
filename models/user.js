@@ -13,105 +13,115 @@ const { BCRYPT_WORK_FACTOR } = require("../config.js");
 
 /** Related functions for users. */
 
-class Course {
-  /** Register new course with data.
+class User {
+  /** authenticate user with username, password.
    *
-   * Returns { id, name, location, distance, par, price_in_dollars, num_of_holes,
-   * phone_number, owner, image }
+   * Returns { username, first_name, last_name, email, is_admin }
+   *
+   * Throws UnauthorizedError is user not found or wrong password.
+   **/
+
+  static async authenticate(username, password) {
+    // try to find the user first
+    const result = await db.query(
+      `
+        SELECT username,
+               password,
+               first_name AS "firstName",
+               last_name  AS "lastName",
+               email,
+               is_admin   AS "isAdmin"
+        FROM users
+        WHERE username = $1`,
+      [username]
+    );
+
+    const user = result.rows[0];
+
+    if (user) {
+      // compare hashed password to a new hash from password
+      const isValid = await bcrypt.compare(password, user.password);
+      if (isValid === true) {
+        delete user.password;
+        return user;
+      }
+    }
+
+    throw new UnauthorizedError("Invalid username/password");
+  }
+
+  /** Register user with data.
+   *
+   * Returns { username, firstName, lastName, email, isAdmin }
    *
    * Throws BadRequestError on duplicates.
    **/
 
-  static async create({
-    name,
-    location,
-    distance,
-    par,
-    priceInDollars,
-    numOfHoles,
-    phoneNumber,
-    owner,
-    image,
+  static async register({
+    username,
+    password,
+    firstName,
+    lastName,
+    email,
+    isAdmin,
   }) {
     const duplicateCheck = await db.query(
       `
-        SELECT name
-        FROM courses
-        WHERE name = $1`,
-      [name]
+        SELECT username
+        FROM users
+        WHERE username = $1`,
+      [username]
     );
 
     if (duplicateCheck.rows.length > 0) {
-      throw new BadRequestError(`Duplicate course: ${name}`);
+      throw new BadRequestError(`Duplicate username: ${username}`);
     }
+
+    const hashedPassword = await bcrypt.hash(password, BCRYPT_WORK_FACTOR);
 
     const result = await db.query(
       `
-                INSERT INTO courses
-                (name,
-                 location,
-                 distance,
-                 par,
-                 price_in_dollars,
-                 num_of_holes,
-                 phone_number,
-                 owner,
-                 image)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+                INSERT INTO users
+                (username,
+                 password,
+                 first_name,
+                 last_name,
+                 email,
+                 is_admin)
+                VALUES ($1, $2, $3, $4, $5, $6)
                 RETURNING
-                    id,
-                    location,
-                    distance,
-                    par
-                    price_in_dollars AS "priceInDollars",
-                    num_of_holes AS "numOfHoles",
-                    phone_number AS "phoneNumber",
-                    owner,
-                    image`,
-      [
-        name,
-        location,
-        distance,
-        par,
-        priceInDollars,
-        numOfHoles,
-        phoneNumber,
-        owner,
-        image,
-      ]
+                    username,
+                    first_name AS "firstName",
+                    last_name AS "lastName",
+                    email,
+                    is_admin AS "isAdmin"`,
+      [username, hashedPassword, firstName, lastName, email, isAdmin]
     );
 
-    const course = result.rows[0];
+    const user = result.rows[0];
 
-    return course;
+    return user;
   }
 
-  /** Find all courses.
+  /** Find all users.
    *
-   * Returns [
-   * { id, name, location, distance, par, priceInDollars, numOfHoles, phoneNumber,
-   *   owner, image }, ...]
+   * Returns [{ username, first_name, last_name, email, is_admin }, ...]
    **/
 
   static async findAll() {
     const result = await db.query(`
-        SELECT id,
-               name,
-               location,
-               distance,
-               par, 
-               price_in_dollars AS "priceInDollars",
-               num_of_holes AS "numOfHoles",
-               phone_number AS "phoneNumber",
-               owner,
-               image
-        FROM courses
-        ORDER BY name`);
+        SELECT username,
+               first_name AS "firstName",
+               last_name  AS "lastName",
+               email,
+               is_admin   AS "isAdmin"
+        FROM users
+        ORDER BY username`);
 
     return result.rows;
   }
 
-  /** Given a course name, return data about course.
+  /** Given a username, return data about user.
    *
    * Returns { username, first_name, last_name, is_admin, jobs }
    *   where jobs is { id, title, company_handle, company_name, state }
@@ -119,42 +129,33 @@ class Course {
    * Throws NotFoundError if user not found.
    **/
 
-  static async get(name) {
+  static async get(username) {
     const userRes = await db.query(
       `
-        SELECT id,
-               name,
-               location,
-               distance,
-               par, 
-               price_in_dollars AS "priceInDollars",
-               num_of_holes AS "numOfHoles",
-               phone_number AS "phoneNumber",
-               owner,
-               image
-        FROM courses
-        WHERE name = $1`,
-      [name]
+        SELECT username,
+               first_name AS "firstName",
+               last_name  AS "lastName",
+               email,
+               is_admin   AS "isAdmin"
+        FROM users
+        WHERE username = $1`,
+      [username]
     );
 
-    const course = userRes.rows[0];
+    const user = userRes.rows[0];
 
-    if (!course) throw new NotFoundError(`No course: ${name}`);
+    if (!user) throw new NotFoundError(`No user: ${username}`);
 
-    // const courseHoles = await db.query(
-    //   `
-    //     SELECT id,
-    //            par,
-    //            distance,
-    //            handicap,
-    //            image
-    //     FROM holes
-    //     WHERE course_name = $1`,
-    //   [course.name]
-    // );
+    const userApplicationsRes = await db.query(
+      `
+        SELECT a.job_id
+        FROM applications AS a
+        WHERE a.username = $1`,
+      [username]
+    );
 
-    // course.holes = courseHoles.rows.map((hole) => a.job_id);
-    return course;
+    user.applications = userApplicationsRes.rows.map((a) => a.job_id);
+    return user;
   }
 
   /** Update user data with `data`.
@@ -258,4 +259,4 @@ class Course {
   }
 }
 
-module.exports = Course;
+module.exports = User;

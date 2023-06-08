@@ -47,9 +47,9 @@ router.post("/", ensureAdmin, async function (req, res, next) {
  * Authorization required: admin
  **/
 
-router.get("/", ensureAdmin, async function (req, res, next) {
-  const users = await User.findAll();
-  return res.json({ users });
+router.get("/", async function (req, res, next) {
+  const courses = await Course.findAll();
+  return res.json({ courses });
 });
 
 /** GET /[username] => { user }

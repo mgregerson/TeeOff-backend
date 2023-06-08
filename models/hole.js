@@ -215,4 +215,4 @@ class Hole {
   }
 }
 
-module.exports = Job;
+module.exports = Hole;
