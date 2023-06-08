@@ -1,6 +1,6 @@
 CREATE TABLE courses (
     id SERIAL PRIMARY KEY,
-    name TEXT NOT NULL,
+    name TEXT NOT NULL UNIQUE,
     location TEXT NOT NULL,
     distance TEXT NOT NULL,
     par TEXT NOT NULL,

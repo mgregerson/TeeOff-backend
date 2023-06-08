@@ -1,5 +1,3 @@
--- both test users have the password "password"
-
 INSERT INTO courses (name, location, distance, par, price_in_dollars, num_of_holes, phone_number, owner, image)
 VALUES
     ('Course 1', 'Location 1', '10 miles', '72', '$50', '18', '123-456-7890', 'Owner 1', 'image1.jpg'),
@@ -9,10 +7,10 @@ VALUES
     ('Course 5', 'Location 5', '8 miles', '69', '$65', '18', '210-543-8765', 'Owner 5', 'image5.jpg');
 
 
-INSERT INTO holes (par, distance, handicap, image, course_id)
+INSERT INTO holes (par, distance, hole_number, handicap, course_name)
 VALUES
-    (4, 400, 5, 'hole1.jpg', 1),
-    (3, 350, 3, 'hole2.jpg', 1),
-    (4, 420, 4, 'hole3.jpg', 2),
-    (5, 500, 2, 'hole4.jpg', 2),
-    (4, 410, 5, 'hole5.jpg', 3);
+    (4, 400, 5, 1, 'Course 1'),
+    (3, 350, 3, 2, 'Course 1'),
+    (4, 420, 4, 1, 'Course 2'),
+    (5, 500, 2, 2, 'Course 2'),
+    (4, 410, 5, 1, 'Course 3');

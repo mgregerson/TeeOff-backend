@@ -14,13 +14,13 @@ const userUpdateSchema = require("../schemas/userUpdate.json");
 
 const router = express.Router();
 
-/** POST / { user }  => { user, token }
+/** POST / { course }  => { user, token }
  *
- * Adds a new user. This is not the registration endpoint --- instead, this is
+ * Adds a new course. This is not the registration endpoint --- instead, this is
  * only for admin users to add new users. The new user being added can be an
  * admin.
  *
- * This returns the newly created user and an authentication token for them:
+ * This returns the newly created course:
  *  {user: { username, firstName, lastName, email, isAdmin }, token }
  *
  * Authorization required: admin
@@ -52,22 +52,17 @@ router.get("/", async function (req, res, next) {
   return res.json({ courses });
 });
 
-/** GET /[username] => { user }
+/** GET /[id] => { course }
  *
- * Returns { username, firstName, lastName, isAdmin, jobs }
- *   where jobs is { id, title, companyHandle, companyName, state }
+ * Returns { id, name, location, distance, par, priceInDollars, numOfHoles, phoneNumber, owner, image }
  *
  * Authorization required: admin or same user-as-:username
  **/
 
-router.get(
-  "/:username",
-  ensureCorrectUserOrAdmin,
-  async function (req, res, next) {
-    const user = await User.get(req.params.username);
-    return res.json({ user });
-  }
-);
+router.get("/:id", async function (req, res, next) {
+  const course = await Course.get(req.params.id);
+  return res.json({ course });
+});
 
 /** PATCH /[username] { user } => { user }
  *
@@ -79,52 +74,48 @@ router.get(
  * Authorization required: admin or same-user-as-:username
  **/
 
-router.patch(
-  "/:username",
-  ensureCorrectUserOrAdmin,
-  async function (req, res, next) {
-    const validator = jsonschema.validate(req.body, userUpdateSchema, {
-      required: true,
-    });
-    if (!validator.valid) {
-      const errs = validator.errors.map((e) => e.stack);
-      throw new BadRequestError(errs);
-    }
+// router.patch("/:id", async function (req, res, next) {
+//   const validator = jsonschema.validate(req.body, userUpdateSchema, {
+//     required: true,
+//   });
+//   if (!validator.valid) {
+//     const errs = validator.errors.map((e) => e.stack);
+//     throw new BadRequestError(errs);
+//   }
 
-    const user = await User.update(req.params.username, req.body);
-    return res.json({ user });
-  }
-);
+//   const user = await User.update(req.params.username, req.body);
+//   return res.json({ user });
+// });
 
-/** DELETE /[username]  =>  { deleted: username }
- *
- * Authorization required: admin or same-user-as-:username
- **/
+// /** DELETE /[username]  =>  { deleted: username }
+//  *
+//  * Authorization required: admin or same-user-as-:username
+//  **/
 
-router.delete(
-  "/:username",
-  ensureCorrectUserOrAdmin,
-  async function (req, res, next) {
-    await User.remove(req.params.username);
-    return res.json({ deleted: req.params.username });
-  }
-);
+// router.delete(
+//   "/:username",
+//   ensureCorrectUserOrAdmin,
+//   async function (req, res, next) {
+//     await User.remove(req.params.username);
+//     return res.json({ deleted: req.params.username });
+//   }
+// );
 
-/** POST /[username]/jobs/[id]  { state } => { application }
- *
- * Returns {"applied": jobId}
- *
- * Authorization required: admin or same-user-as-:username
- * */
+// /** POST /[username]/jobs/[id]  { state } => { application }
+//  *
+//  * Returns {"applied": jobId}
+//  *
+//  * Authorization required: admin or same-user-as-:username
+//  * */
 
-router.post(
-  "/:username/jobs/:id",
-  ensureCorrectUserOrAdmin,
-  async function (req, res, next) {
-    const jobId = +req.params.id;
-    await User.applyToJob(req.params.username, jobId);
-    return res.json({ applied: jobId });
-  }
-);
+// router.post(
+//   "/:username/jobs/:id",
+//   ensureCorrectUserOrAdmin,
+//   async function (req, res, next) {
+//     const jobId = +req.params.id;
+//     await User.applyToJob(req.params.username, jobId);
+//     return res.json({ applied: jobId });
+//   }
+// );
 
 module.exports = router;

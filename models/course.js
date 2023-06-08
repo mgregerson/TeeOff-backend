@@ -119,7 +119,7 @@ class Course {
    * Throws NotFoundError if user not found.
    **/
 
-  static async get(name) {
+  static async get(id) {
     const userRes = await db.query(
       `
         SELECT id,
@@ -133,31 +133,31 @@ class Course {
                owner,
                image
         FROM courses
-        WHERE name = $1`,
-      [name]
+        WHERE id = $1`,
+      [id]
     );
 
     const course = userRes.rows[0];
 
-    if (!course) throw new NotFoundError(`No course: ${name}`);
+    if (!course) throw new NotFoundError(`No course with id ${id}`);
 
-    // const courseHoles = await db.query(
-    //   `
-    //     SELECT id,
-    //            par,
-    //            distance,
-    //            handicap,
-    //            image
-    //     FROM holes
-    //     WHERE course_name = $1`,
-    //   [course.name]
-    // );
+    const courseHoles = await db.query(
+      `
+        SELECT id,
+               par,
+               distance,
+               handicap,
+               image
+        FROM holes
+        WHERE course_name = $1`,
+      [course.name]
+    );
 
-    // course.holes = courseHoles.rows.map((hole) => a.job_id);
+    course.holes = courseHoles.rows;
     return course;
   }
 
-  /** Update user data with `data`.
+  /** Update course data with `data`.
    *
    * This is a "partial update" --- it's fine if data doesn't contain
    * all the fields; this only changes provided ones.
@@ -218,43 +218,6 @@ class Course {
     const user = result.rows[0];
 
     if (!user) throw new NotFoundError(`No user: ${username}`);
-  }
-
-  /** Apply for job: update db, returns undefined.
-   *
-   * - username: username applying for job
-   * - jobId: job id
-   **/
-
-  static async applyToJob(username, jobId) {
-    const preCheck = await db.query(
-      `
-        SELECT id
-        FROM jobs
-        WHERE id = $1`,
-      [jobId]
-    );
-    const job = preCheck.rows[0];
-
-    if (!job) throw new NotFoundError(`No job: ${jobId}`);
-
-    const preCheck2 = await db.query(
-      `
-        SELECT username
-        FROM users
-        WHERE username = $1`,
-      [username]
-    );
-    const user = preCheck2.rows[0];
-
-    if (!user) throw new NotFoundError(`No username: ${username}`);
-
-    await db.query(
-      `
-        INSERT INTO applications (job_id, username)
-        VALUES ($1, $2)`,
-      [jobId, username]
-    );
   }
 }
 

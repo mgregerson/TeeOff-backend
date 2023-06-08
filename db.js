@@ -1,6 +1,6 @@
 "use strict";
 
-/** Database setup for jobly. */
+/** Database setup for teeOff. */
 
 const { Client } = require("pg");
 const { getDatabaseUri } = require("./config");
