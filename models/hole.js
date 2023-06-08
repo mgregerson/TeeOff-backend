@@ -4,13 +4,12 @@ const db = require("../db");
 const { NotFoundError } = require("../expressError");
 const { sqlForPartialUpdate } = require("../helpers/sql");
 
-
 /** Related functions for companies. */
 
-class Job {
-  /** Create a job (from data), update db, return new job data.
+class Hole {
+  /** Create a Hole (from data), update db, return new Hole data.
    *
-   * data should be { title, salary, equity, companyHandle }
+   * data should be { id, par, distance, image, course_id }
    *
    * Throws NotFoundError if the company does not exist.
    *
@@ -18,16 +17,19 @@ class Job {
    **/
 
   static async create(data) {
-    const companyPreCheck = await db.query(`
-                SELECT handle
-                FROM companies
+    const holePreCheck = await db.query(
+      `
+                SELECT hole
+                FROM holes
                 WHERE handle = $1`,
-        [data.companyHandle]);
+      [data.companyHandle]
+    );
     const company = companyPreCheck.rows[0];
 
     if (!company) throw new NotFoundError(`No company: ${data.companyHandle}`);
 
-    const result = await db.query(`
+    const result = await db.query(
+      `
         INSERT INTO jobs (title,
                           salary,
                           equity,
@@ -38,12 +40,9 @@ class Job {
             title,
             salary,
             equity,
-            company_handle AS "companyHandle"`, [
-      data.title,
-      data.salary,
-      data.equity,
-      data.companyHandle,
-    ]);
+            company_handle AS "companyHandle"`,
+      [data.title, data.salary, data.equity, data.companyHandle]
+    );
     const job = result.rows[0];
 
     return job;
@@ -81,9 +80,8 @@ class Job {
       whereParts.push(`title ILIKE $${vals.length}`);
     }
 
-    const where = (whereParts.length > 0) ?
-        "WHERE " + whereParts.join(" AND ")
-        : "";
+    const where =
+      whereParts.length > 0 ? "WHERE " + whereParts.join(" AND ") : "";
 
     return { where, vals };
   }
@@ -99,12 +97,14 @@ class Job {
    * */
 
   static async findAll({ minSalary, hasEquity, title } = {}) {
-
     const { where, vals } = this._filterWhereBuilder({
-      minSalary, hasEquity, title,
+      minSalary,
+      hasEquity,
+      title,
     });
 
-    const jobsRes = await db.query(`
+    const jobsRes = await db.query(
+      `
         SELECT j.id,
                j.title,
                j.salary,
@@ -113,7 +113,9 @@ class Job {
                c.name           AS "companyName"
         FROM jobs j
                  LEFT JOIN companies AS c ON c.handle = j.company_handle
-            ${where}`, vals);
+            ${where}`,
+      vals
+    );
 
     return jobsRes.rows;
   }
@@ -127,27 +129,33 @@ class Job {
    **/
 
   static async get(id) {
-    const jobRes = await db.query(`
+    const jobRes = await db.query(
+      `
         SELECT id,
                title,
                salary,
                equity,
                company_handle AS "companyHandle"
         FROM jobs
-        WHERE id = $1`, [id]);
+        WHERE id = $1`,
+      [id]
+    );
 
     const job = jobRes.rows[0];
 
     if (!job) throw new NotFoundError(`No job: ${id}`);
 
-    const companiesRes = await db.query(`
+    const companiesRes = await db.query(
+      `
         SELECT handle,
                name,
                description,
                num_employees AS "numEmployees",
                logo_url      AS "logoUrl"
         FROM companies
-        WHERE handle = $1`, [job.companyHandle]);
+        WHERE handle = $1`,
+      [job.companyHandle]
+    );
 
     delete job.companyHandle;
     job.company = companiesRes.rows[0];
@@ -168,9 +176,7 @@ class Job {
    */
 
   static async update(id, data) {
-    const { setCols, values } = sqlForPartialUpdate(
-        data,
-        {});
+    const { setCols, values } = sqlForPartialUpdate(data, {});
     const idVarIdx = "$" + (values.length + 1);
 
     const querySql = `
@@ -197,10 +203,12 @@ class Job {
 
   static async remove(id) {
     const result = await db.query(
-        `DELETE
+      `DELETE
          FROM jobs
          WHERE id = $1
-         RETURNING id`, [id]);
+         RETURNING id`,
+      [id]
+    );
     const job = result.rows[0];
 
     if (!job) throw new NotFoundError(`No job: ${id}`);

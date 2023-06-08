@@ -7,13 +7,12 @@ const jsonschema = require("jsonschema");
 const express = require("express");
 const { BadRequestError } = require("../expressError");
 const { ensureAdmin } = require("../middleware/auth");
-const Job = require("../models/job");
+const Job = require("../models/hole");
 const jobNewSchema = require("../schemas/jobNew.json");
 const jobUpdateSchema = require("../schemas/jobUpdate.json");
 const jobSearchSchema = require("../schemas/jobSearch.json");
 
 const router = express.Router({ mergeParams: true });
-
 
 /** POST / { job } => { job }
  *
@@ -25,13 +24,11 @@ const router = express.Router({ mergeParams: true });
  */
 
 router.post("/", ensureAdmin, async function (req, res, next) {
-  const validator = jsonschema.validate(
-    req.body,
-    jobNewSchema,
-    {required: true}
-  );
+  const validator = jsonschema.validate(req.body, jobNewSchema, {
+    required: true,
+  });
   if (!validator.valid) {
-    const errs = validator.errors.map(e => e.stack);
+    const errs = validator.errors.map((e) => e.stack);
     throw new BadRequestError(errs);
   }
 
@@ -56,13 +53,9 @@ router.get("/", async function (req, res, next) {
   if (q.minSalary !== undefined) q.minSalary = +q.minSalary;
   q.hasEquity = q.hasEquity === "true";
 
-  const validator = jsonschema.validate(
-    q,
-    jobSearchSchema,
-    {required: true}
-  );
+  const validator = jsonschema.validate(q, jobSearchSchema, { required: true });
   if (!validator.valid) {
-    const errs = validator.errors.map(e => e.stack);
+    const errs = validator.errors.map((e) => e.stack);
     throw new BadRequestError(errs);
   }
 
@@ -83,7 +76,6 @@ router.get("/:id", async function (req, res, next) {
   return res.json({ job });
 });
 
-
 /** PATCH /[jobId]  { fld1, fld2, ... } => { job }
  *
  * Data can include: { title, salary, equity }
@@ -94,13 +86,11 @@ router.get("/:id", async function (req, res, next) {
  */
 
 router.patch("/:id", ensureAdmin, async function (req, res, next) {
-  const validator = jsonschema.validate(
-    req.body,
-    jobUpdateSchema,
-    {required: true}
-  );
+  const validator = jsonschema.validate(req.body, jobUpdateSchema, {
+    required: true,
+  });
   if (!validator.valid) {
-    const errs = validator.errors.map(e => e.stack);
+    const errs = validator.errors.map((e) => e.stack);
     throw new BadRequestError(errs);
   }
 
@@ -117,6 +107,5 @@ router.delete("/:id", ensureAdmin, async function (req, res, next) {
   await Job.remove(req.params.id);
   return res.json({ deleted: +req.params.id });
 });
-
 
 module.exports = router;
