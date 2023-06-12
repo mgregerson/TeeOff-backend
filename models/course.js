@@ -47,27 +47,27 @@ class Course {
 
     const result = await db.query(
       `
-                INSERT INTO courses
-                (name,
-                 location,
-                 distance,
-                 par,
-                 price_in_dollars,
-                 num_of_holes,
-                 phone_number,
-                 owner,
-                 image)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-                RETURNING
-                    id,
-                    location,
-                    distance,
-                    par
-                    price_in_dollars AS "priceInDollars",
-                    num_of_holes AS "numOfHoles",
-                    phone_number AS "phoneNumber",
-                    owner,
-                    image`,
+            INSERT INTO courses
+            (name,
+            location,
+            distance,
+            par,
+            price_in_dollars,
+            num_of_holes,
+            phone_number,
+            owner,
+            image)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            RETURNING
+                id,
+                location,
+                distance,
+                par,
+                price_in_dollars AS priceInDollars,
+                num_of_holes AS numOfHoles,
+                phone_number AS phoneNumber,
+                owner,
+                image;`,
       [
         name,
         location,
@@ -147,6 +147,7 @@ class Course {
                par,
                distance,
                handicap,
+               course_name AS "courseName",
                image
         FROM holes
         WHERE course_name = $1`,
@@ -163,9 +164,9 @@ class Course {
    * all the fields; this only changes provided ones.
    *
    * Data can include:
-   *   { firstName, lastName, password, email, isAdmin }
+   *   { location, distance, par, priceInDollars, numOfHoles, phoneNumber, owner, image }
    *
-   * Returns { username, firstName, lastName, email, isAdmin }
+   * Returns { id, name, location, distance, par, priceInDollars, numOfHoles, phoneNumber, owner, image }
    *
    * Throws NotFoundError if not found.
    *
@@ -174,50 +175,55 @@ class Course {
    * or a serious security risks are opened.
    */
 
-  static async update(username, data) {
-    if (data.password) {
-      data.password = await bcrypt.hash(data.password, BCRYPT_WORK_FACTOR);
-    }
+  // static async update(id, data) {
+  //   if (data.password) {
+  //     data.password = await bcrypt.hash(data.password, BCRYPT_WORK_FACTOR);
+  //   }
 
-    const { setCols, values } = sqlForPartialUpdate(data, {
-      firstName: "first_name",
-      lastName: "last_name",
-      isAdmin: "is_admin",
-    });
-    const usernameVarIdx = "$" + (values.length + 1);
+  //   const { setCols, values } = sqlForPartialUpdate(data, {
+  //     priceInDollars: "priceInDollars",
+  //     numOfHoles: "num_of_holes",
+  //     phoneNumber: "phone_number",
+  //   });
+  //   const idVarIndex = "$" + (values.length + 1);
 
-    const querySql = `
-        UPDATE users
-        SET ${setCols}
-        WHERE username = ${usernameVarIdx}
-        RETURNING username,
-            first_name AS "firstName",
-            last_name AS "lastName",
-            email,
-            is_admin AS "isAdmin"`;
-    const result = await db.query(querySql, [...values, username]);
-    const user = result.rows[0];
+  //   const querySql = `
+  //       UPDATE courses
+  //               SET ${setCols}
+  //               WHERE id = ${idVarIndex}
+  //               RETURNING RETURNING
+  //               id,
+  //               location,
+  //               distance,
+  //               par,
+  //               price_in_dollars AS priceInDollars,
+  //               num_of_holes AS numOfHoles,
+  //               phone_number AS phoneNumber,
+  //               owner,
+  //               image;`;
+  //   const result = await db.query(querySql, [...values, username]);
+  //   const user = result.rows[0];
 
-    if (!user) throw new NotFoundError(`No user: ${username}`);
+  //   if (!user) throw new NotFoundError(`No user: ${username}`);
 
-    delete user.password;
-    return user;
-  }
+  //   delete user.password;
+  //   return user;
+  // }
 
   /** Delete given user from database; returns undefined. */
 
-  static async remove(username) {
+  static async remove(id) {
     let result = await db.query(
       `
         DELETE
-        FROM users
-        WHERE username = $1
-        RETURNING username`,
-      [username]
+        FROM courses
+        WHERE id = $1
+        RETURNING id, name`,
+      [id]
     );
-    const user = result.rows[0];
+    const course = result.rows[0];
 
-    if (!user) throw new NotFoundError(`No user: ${username}`);
+    if (!course) throw new NotFoundError(`No course with id: ${id}`);
   }
 }
 

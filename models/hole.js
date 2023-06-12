@@ -9,7 +9,7 @@ const { sqlForPartialUpdate } = require("../helpers/sql");
 class Hole {
   /** Create a Hole (from data), update db, return new Hole data.
    *
-   * data should be { id, par, distance, image, course_id }
+   * data should be { id, par, distance, image, course_name }
    *
    * Throws NotFoundError if the company does not exist.
    *
@@ -17,35 +17,36 @@ class Hole {
    **/
 
   static async create(data) {
-    const holePreCheck = await db.query(
+    const coursePreCheck = await db.query(
       `
-                SELECT hole
-                FROM holes
-                WHERE handle = $1`,
-      [data.companyHandle]
+                SELECT course_name
+                FROM courses
+                WHERE course_name = $1`,
+      [data.courseName]
     );
-    const company = companyPreCheck.rows[0];
+    const course = coursePreCheck.rows[0];
 
-    if (!company) throw new NotFoundError(`No company: ${data.companyHandle}`);
+    if (!course) throw new NotFoundError(`No course: ${data.courseName}`);
 
     const result = await db.query(
       `
-        INSERT INTO jobs (title,
-                          salary,
-                          equity,
-                          company_handle)
-        VALUES ($1, $2, $3, $4)
+        INSERT INTO holes (par,
+                          distance,
+                          handicap,
+                          course_name)
+        VALUES ($1, $2, $3, $4, $5)
         RETURNING
             id,
-            title,
-            salary,
-            equity,
-            company_handle AS "companyHandle"`,
-      [data.title, data.salary, data.equity, data.companyHandle]
+            par,
+            distance,
+            handicap,
+            course_name AS "courseName",
+            image`,
+      [data.par, data.distance, data.handicap, data.courseName]
     );
-    const job = result.rows[0];
+    const hole = result.rows[0];
 
-    return job;
+    return hole;
   }
 
   /** Create WHERE clause for filters, to be used by functions that query

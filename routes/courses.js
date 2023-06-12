@@ -1,6 +1,6 @@
 "use strict";
 
-/** Routes for users. */
+/** Routes for courses. */
 
 const jsonschema = require("jsonschema");
 
@@ -9,25 +9,23 @@ const { ensureCorrectUserOrAdmin, ensureAdmin } = require("../middleware/auth");
 const { BadRequestError } = require("../expressError");
 const Course = require("../models/course");
 const { createToken } = require("../helpers/tokens");
-const userNewSchema = require("../schemas/userNew.json");
-const userUpdateSchema = require("../schemas/userUpdate.json");
+const courseNewSchema = require("../schemas/courseNew.json");
+const courseUpdateSchema = require("../schemas/courseUpdate.json");
 
 const router = express.Router();
 
-/** POST / { course }  => { user, token }
+/** POST / { course }  => { id, name, location, distance, par, priceInDollars, numOfHoles, phoneNumber, owner, image }
  *
- * Adds a new course. This is not the registration endpoint --- instead, this is
- * only for admin users to add new users. The new user being added can be an
- * admin.
+ * Adds a new course.
  *
  * This returns the newly created course:
- *  {user: { username, firstName, lastName, email, isAdmin }, token }
+ *  {Course: { id, name, location, distance, par, priceInDollars, numOfHoles, phoneNumber, owner, image }
  *
- * Authorization required: admin
  **/
 
-router.post("/", ensureAdmin, async function (req, res, next) {
-  const validator = jsonschema.validate(req.body, userNewSchema, {
+router.post("/", async function (req, res, next) {
+  console.log(req.body, "THE BODY");
+  const validator = jsonschema.validate(req.body, courseNewSchema, {
     required: true,
   });
   if (!validator.valid) {
@@ -35,9 +33,8 @@ router.post("/", ensureAdmin, async function (req, res, next) {
     throw new BadRequestError(errs);
   }
 
-  const user = await User.register(req.body);
-  const token = createToken(user);
-  return res.status(201).json({ user, token });
+  const course = await Course.create(req.body);
+  return res.status(201).json({ Course: course });
 });
 
 /** GET / => { users: [ {username, firstName, lastName, email }, ... ] }
@@ -64,42 +61,40 @@ router.get("/:id", async function (req, res, next) {
   return res.json({ course });
 });
 
-/** PATCH /[username] { user } => { user }
+/** PATCH /[id] { course } => { course }
  *
  * Data can include:
- *   { firstName, lastName, password, email }
+ *   { name, location, distance, par, priceInDollars, numOfHoles, phoneNumber, owner, image }
  *
- * Returns { username, firstName, lastName, email, isAdmin }
+ * Returns { id, name, location, distance, par, priceInDollars, numOfHoles, phoneNumber, owner, image }
  *
- * Authorization required: admin or same-user-as-:username
+ * Authorization required: admin or owner of course
  **/
 
-// router.patch("/:id", async function (req, res, next) {
-//   const validator = jsonschema.validate(req.body, userUpdateSchema, {
-//     required: true,
-//   });
-//   if (!validator.valid) {
-//     const errs = validator.errors.map((e) => e.stack);
-//     throw new BadRequestError(errs);
-//   }
+// id, name, location, distance, par, priceInDollars, numOfHoles, phoneNumber, owner, image
 
-//   const user = await User.update(req.params.username, req.body);
-//   return res.json({ user });
-// });
+router.patch("/:id", async function (req, res, next) {
+  const validator = jsonschema.validate(req.body, courseUpdateSchema, {
+    required: true,
+  });
+  if (!validator.valid) {
+    const errs = validator.errors.map((e) => e.stack);
+    throw new BadRequestError(errs);
+  }
 
-// /** DELETE /[username]  =>  { deleted: username }
+  const course = await course.update(req.params.id, req.body);
+  return res.json({ course });
+});
+
+// /** DELETE /[id]  =>  { deleted: courseName }
 //  *
-//  * Authorization required: admin or same-user-as-:username
+//  * Authorization required: _______
 //  **/
 
-// router.delete(
-//   "/:username",
-//   ensureCorrectUserOrAdmin,
-//   async function (req, res, next) {
-//     await User.remove(req.params.username);
-//     return res.json({ deleted: req.params.username });
-//   }
-// );
+router.delete("/:id", async function (req, res, next) {
+  await Course.remove(req.params.id);
+  return res.json({ deleted: req.params.id });
+});
 
 // /** POST /[username]/jobs/[id]  { state } => { application }
 //  *
